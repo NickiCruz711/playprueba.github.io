@@ -1,0 +1,821 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>RhythmStream Music Player</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- React and ReactDOM -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+    <!-- Babel for JSX/TSX transpilation -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script type="importmap">
+{
+  "imports": {
+    "react": "https://esm.sh/react@^19.1.0",
+    "react-dom/": "https://esm.sh/react-dom@^19.1.0/",
+    "react/": "https://esm.sh/react@^19.1.0/"
+  }
+}
+</script>
+</head>
+<body class="bg-black">
+    <div id="root"></div>
+
+    <script type="text/babel" data-presets="react,typescript">
+        // --- TYPES ---
+        interface Track {
+          id: number;
+          title: string;
+          artist: string;
+          duration: string;
+          albumArt: string;
+          available: boolean;
+          featuring?: string;
+          audioSrc?: string;
+        }
+
+        interface Artist {
+          name: string;
+          verified: boolean;
+          followers: string;
+          trackCount: number;
+          avatarUrl: string;
+          albumName: string;
+          releaseYear: string;
+          bio: string;
+          buyUrl?: string;
+        }
+
+        // --- CONSTANTS ---
+        const ARTIST_DATA: Artist = {
+          name: 'Sylvina Brizuela',
+          verified: false,
+          followers: '12,3K',
+          trackCount: 8,
+          avatarUrl: 'https://ia600401.us.archive.org/10/items/tapa_20250702/tapa.jpg',
+          albumName: 'Sylvina Brizuela',
+          releaseYear: '2012-∞',
+          bio: 'Sylvina Brizuela es cantante solista de folklore y profesora de vocalización de la ciudad de Presidencia Roque Sáenz Peña en la provincia del Chaco. Con una voz profunda y auténtica, combina la fuerza del canto tradicional con una calidez cercana que conecta con su público. Participa activamente en festivales y encuentros culturales, y también comparte su pasión por la música enseñando a nuevas generaciones. En cada escenario, Sylvina transmite raíces, identidad y emoción',
+          buyUrl: 'https://tiendaguah.com/sylvina-brizuela'
+        };
+
+        const TRACK_DATA: Track[] = [
+          { id: 1, title: 'Aunque yo me muera', artist: 'Sylvina Brizuela', duration: '0:00', albumArt: 'https://ia600401.us.archive.org/10/items/tapa_20250702/tapa.jpg', available: true, audioSrc: 'https://archive.org/download/como-ristra-e-chacarera/Aunque%20yo%20me%20muera.mp3' },
+          { id: 2, title: 'Bailar de esa manera', artist: 'Sylvina Brizuela', duration: '0:00', albumArt: 'https://ia600401.us.archive.org/10/items/tapa_20250702/tapa.jpg', available: true, audioSrc: 'https://archive.org/download/como-ristra-e-chacarera/Bailar%20de%20esa%20manera.mp3' },
+          { id: 3, title: 'Cómo ristra é chacarera', artist: 'Sylvina Brizuela', duration: '0:00', albumArt: 'https://ia600401.us.archive.org/10/items/tapa_20250702/tapa.jpg', available: true, audioSrc: 'https://archive.org/download/como-ristra-e-chacarera/C%C3%B3mo%20ristra%20%C3%A9%20chacarera.mp3' },
+          { id: 4, title: 'Gatito enamorado', artist: 'Sylvina Brizuela', duration: '0:00', albumArt: 'https://ia600401.us.archive.org/10/items/tapa_20250702/tapa.jpg', available: false, audioSrc: 'https://archive.org/download/como-ristra-e-chacarera/Gatito%20enamorado.mp3' },
+          { id: 5, title: 'La difícil', artist: 'Sylvina Brizuela', duration: '0:00', albumArt: 'https://ia600401.us.archive.org/10/items/tapa_20250702/tapa.jpg', available: false, audioSrc: 'https://archive.org/download/como-ristra-e-chacarera/La%20dif%C3%ADcil.mp3' },
+          { id: 6, title: 'La rogadita', artist: 'Sylvina Brizuela', duration: '0:00', albumArt: 'https://ia600401.us.archive.org/10/items/tapa_20250702/tapa.jpg', available: false, featuring: 'Federico Díaz', audioSrc: 'https://archive.org/download/como-ristra-e-chacarera/La%20gordita%20con%20Feder%C3%ADco%20D%C3%ADaz.mp3' },
+          { id: 7, title: 'Me quedo', artist: 'Sylvina Brizuela', duration: '0:00', albumArt: 'https://ia600401.us.archive.org/10/items/tapa_20250702/tapa.jpg', available: false, audioSrc: 'https://archive.org/download/como-ristra-e-chacarera/Me%20quedo.mp3' },
+          { id: 8, title: 'Sos lo que yo quiero', artist: 'Sylvina Brizuela', duration: '0:00', albumArt: 'https://ia600401.us.archive.org/10/items/tapa_20250702/tapa.jpg', available: false, featuring: 'Federico Díaz', audioSrc: 'https://archive.org/download/como-ristra-e-chacarera/Sos%20lo%20que%20yo%20quiero%20con%20Federico%20D%C3%ADaz.mp3' },
+        ];
+
+        // --- COMPONENTS ---
+
+        const Icon = ({ name, className = 'w-6 h-6' }) => {
+          const icons = {
+            play: <path d="M6 4l12 8-12 8V4z" />,
+            pause: <path d="M6 4h4v16H6zM14 4h4v16h-4z" />,
+            next: <path d="M6 4l12 8-12 8V4zM18 4h2v16h-2z" />,
+            previous: <path d="M18 20L6 12l12-8v16zM4 4h2v16H4z" />,
+            stop: <path d="M6 6h12v12H6z" />,
+            shuffle: <path fillRule="evenodd" clipRule="evenodd" d="M18.364 4.636a1 1 0 00-1.414 0L12 9.586 7.05 4.636a1 1 0 10-1.414 1.414L10.586 11l-4.95 4.95a1 1 0 101.414 1.414L12 12.414l4.95 4.95a1 1 0 101.414-1.414L13.414 11l4.95-4.95a1 1 0 000-1.414zM4.636 5.636L9.586 10.586l-4.95 4.95" />,
+            repeat: <path d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4z" />,
+            volume: <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z" />,
+            verified: <path fillRule="evenodd" clipRule="evenodd" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1.03 15.41l-4.5-4.5 1.41-1.41 3.09 3.08 7.09-7.08 1.41 1.41-8.5 8.5z" />,
+            followers: <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />,
+            tracks: <path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z" />,
+            location: <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 010-5 2.5 2.5 0 010 5z" />,
+            share: <path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.66 1.34 3 3 3s3-1.34 3-3-1.34-3-3-3z"/>,
+            plus: <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>,
+            dots: <path d="M6 10c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm12 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm-6 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/>,
+            facebook: <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z" />,
+            instagram: <path d="M7.8 2h8.4C19.4 2 22 4.6 22 7.8v8.4a5.8 5.8 0 0 1-5.8 5.8H7.8C4.6 22 2 19.4 2 16.2V7.8A5.8 5.8 0 0 1 7.8 2zm-.2 2A3.6 3.6 0 0 0 4 7.6v8.8A3.6 3.6 0 0 0 7.6 20h8.8A3.6 3.6 0 0 0 20 16.4V7.6A3.6 3.6 0 0 0 16.4 4H7.6zm9.65 1.5a1.25 1.25 0 1 1-2.5 0 1.25 1.25 0 0 1 2.5 0zM12 7a5 5 0 1 1 0 10 5 5 0 0 1 0-10zm0 2a3 3 0 1 0 0 6 3 3 0 0 0 0-6z" />,
+            youtube: <path d="M21.58,7.19C21.35,6.3,20.7,5.65,19.81,5.42C18.25,5,12,5,12,5s-6.25,0-7.81,0.42C3.3,5.65,2.65,6.3,2.42,7.19C2,8.75,2,12,2,12s0,3.25,0.42,4.81c0.23,0.89,0.88,1.54,1.77,1.77C5.75,19,12,19,12,19s6.25,0,7.81-0.42c0.89-0.23,1.54-0.88,1.77-1.77C22,15.25,22,12,22,12S22,8.75,21.58,7.19z M9.86,15.93V8.07l6.83,3.93L9.86,15.93z"/>,
+            whatsapp: <path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.79.46 3.48 1.32 4.95L2 22l5.25-1.38c1.41.79 3.02 1.22 4.79 1.22 5.46 0 9.91-4.45 9.91-9.91S17.5 2 12.04 2zM12.04 20.13c-1.54 0-3.02-.39-4.32-1.1L4.5 20.25l1.24-3.13c-.83-1.34-1.28-2.88-1.28-4.51 0-4.53 3.69-8.21 8.22-8.21 4.53 0 8.21 3.68 8.21 8.21s-3.68 8.21-8.21 8.21zm4.52-6.13c-.24-.12-1.45-.72-1.68-.8s-.39-.12-.55.12c-.16.24-.63.8-.78.96-.14.16-.29.18-.53.06s-1.03-.38-1.95-1.2c-.72-.64-1.2-1.44-1.34-1.68-.14-.24-.01-.37.11-.48.11-.11.24-.29.36-.43.12-.14.16-.24.24-.4s.12-.29 0-.41c-.08-.12-.55-1.32-.76-1.81s-.41-.41-.55-.41-.29-.01-.44-.01c-.16 0-.41.06-.63.3s-.87.85-.87 2.07c0 1.22.89 2.4 1.01 2.56.12.16 1.76 2.68 4.27 3.75 2.5 1.06 2.5.71 2.95.69.45-.02 1.45-.59 1.65-1.15s.2-1.07.14-1.15c-.06-.09-.23-.15-.48-.27z" />,
+            eye: <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8zm11 0a3 3 0 100-6 3 3 0 000 6z" />,
+            download: <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>,
+            downloaded: <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />,
+          };
+          return (
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              fill="currentColor"
+              className={className}
+              aria-hidden="true"
+            >
+              {icons[name] || <path d="M0 0h24v24H0z" fill="none" />}
+            </svg>
+          );
+        };
+        
+        const PurchaseModal = ({ isOpen, onClose, artist, onUnlock }) => {
+            const [code, setCode] = React.useState('');
+            const [isUnlocked, setIsUnlocked] = React.useState(false);
+            const modalRef = React.useRef(null);
+
+            React.useEffect(() => {
+                if (code === '123456') {
+                    onUnlock();
+                    setIsUnlocked(true);
+                    const timer = setTimeout(() => {
+                        onClose();
+                    }, 3500); // Increased time to read message
+                    return () => clearTimeout(timer);
+                }
+            }, [code, onUnlock, onClose]);
+            
+            React.useEffect(() => {
+                if (!isOpen) {
+                    setTimeout(() => {
+                       setCode('');
+                       setIsUnlocked(false);
+                    }, 300);
+                }
+            }, [isOpen]);
+
+            React.useEffect(() => {
+                const handleKeyDown = (e) => {
+                    if (e.key === 'Escape') onClose();
+                };
+                if (isOpen) {
+                    document.addEventListener('keydown', handleKeyDown);
+                }
+                return () => document.removeEventListener('keydown', handleKeyDown);
+            }, [isOpen, onClose]);
+
+            const handleBackdropClick = (e) => {
+                if (modalRef.current && !modalRef.current.contains(e.target)) {
+                    onClose();
+                }
+            };
+            
+            if (!isOpen) return null;
+
+            return (
+                <div 
+                    className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in"
+                    onClick={handleBackdropClick}
+                >
+                    <div 
+                        ref={modalRef}
+                        className="bg-zinc-900 border border-zinc-700/50 text-white rounded-xl shadow-2xl p-8 w-full max-w-md text-center relative animate-slide-in-up"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        {isUnlocked ? (
+                             <>
+                                <h2 className="text-2xl font-bold mb-4 text-green-400">¡Álbum Desbloqueado!</h2>
+                                <p className="text-gray-300 mb-2">Todas las canciones están ahora disponibles.</p>
+                                <p className="text-gray-400 mb-6 text-sm">Iniciando descarga para escuchar sin conexión...</p>
+                                <div className="w-16 h-16 mx-auto bg-green-500/20 rounded-full flex items-center justify-center animate-pulse">
+                                    <Icon name="download" className="w-8 h-8 text-green-400" />
+                                </div>
+                            </>
+                        ) : (
+                            <>
+                                <button 
+                                  onClick={onClose} 
+                                  className="absolute top-3 right-3 text-gray-500 hover:text-white transition-colors text-2xl"
+                                  aria-label="Cerrar modal"
+                                >
+                                  &times;
+                                </button>
+                                <h2 className="text-2xl font-bold mb-2">Estas por comprar el Álbum de</h2>
+                                <p className="text-xl font-semibold text-green-400 mb-4">{artist.name}</p>
+                                <p className="text-3xl font-bold mb-6">Costo $5.000</p>
+                                
+                                <a 
+                                    href={artist.buyUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="block w-full bg-red-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-red-500 transition-colors duration-200 mb-8"
+                                >
+                                    Pagar
+                                </a>
+
+                                <div className="border-t border-zinc-700/50 my-6"></div>
+
+                                <label htmlFor="purchase-code" className="block text-sm text-gray-400 mb-2">Insertar Código de compra</label>
+                                <input
+                                    id="purchase-code"
+                                    type="text"
+                                    maxLength="6"
+                                    value={code}
+                                    onChange={(e) => setCode(e.target.value.replace(/[^0-9]/g, ''))}
+                                    className="bg-zinc-700 text-center text-2xl font-mono tracking-[0.5em] p-3 rounded-lg w-full max-w-xs mx-auto focus:outline-none focus:ring-2 focus:ring-green-400 placeholder:text-zinc-500"
+                                    placeholder="------"
+                                    autoComplete="off"
+                                    autoFocus
+                                />
+                            </>
+                        )}
+                    </div>
+                    <style>{`
+                        @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+                        .animate-fade-in { animation: fade-in 0.2s ease-out forwards; }
+
+                        @keyframes slide-in-up {
+                            from { opacity: 0; transform: translateY(20px) scale(0.98); }
+                            to { opacity: 1; transform: translateY(0) scale(1); }
+                        }
+                        .animate-slide-in-up { animation: slide-in-up 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+                    `}</style>
+                </div>
+            );
+        };
+
+        const DesktopHeader = ({ artist, currentTrack, isPlaying }) => {
+          const COVER_PHOTO_URL = 'https://ia600401.us.archive.org/10/items/tapa_20250702/tapa.jpg';
+          return (
+            <div className="hidden lg:block relative w-full h-80 text-white rounded-t-lg overflow-hidden">
+              <img
+                src={COVER_PHOTO_URL}
+                alt={`${artist.name}'s cover image`}
+                className="absolute inset-0 w-full h-full object-cover object-center"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
+              <div className="absolute bottom-0 left-0 p-6 flex flex-col justify-end h-full w-full">
+                {artist.verified && (
+                     <div className="flex items-center gap-2 mb-2">
+                        <Icon name="verified" className="w-8 h-8 text-blue-400" />
+                        <span className="font-semibold">Artista verificado</span>
+                    </div>
+                )}
+                {isPlaying && currentTrack && (
+                  <h2 className="text-3xl font-semibold text-white mb-1 tracking-tight animate-pulse truncate" style={{ textShadow: '1px 1px 5px rgba(0,0,0,0.7)' }}>
+                    {currentTrack.title}
+                  </h2>
+                )}
+                <h1 className="text-7xl font-bold tracking-tight" style={{ textShadow: '2px 4px 10px rgba(0,0,0,0.8)' }}>
+                  {artist.name}
+                </h1>
+                <p className="mt-2 text-lg text-gray-300">
+                    {artist.albumName} - {artist.releaseYear}
+                </p>
+              </div>
+            </div>
+          );
+        };
+
+        const AlbumInfo = ({ artist, currentTrack, isPlaying }) => {
+          return (
+            <div className="w-full my-4">
+              <div className="lg:hidden text-center">
+                {currentTrack && isPlaying ? (
+                  <>
+                    <h2 className="text-lg font-semibold text-white truncate" title={currentTrack.title}>
+                      {currentTrack.title}
+                    </h2>
+                    <p className="text-sm text-gray-400">{artist.name} - {artist.albumName}</p>
+                  </>
+                ) : (
+                  <div className="text-gray-400 italic text-center">
+                    <p>La música</p>
+                    <p>vuelve a ser tuya</p>
+                  </div>
+                )}
+              </div>
+              <div className="hidden lg:block text-sm space-y-1 mt-4">
+                <p className="text-white"><span className="text-gray-400 w-20 inline-block font-medium">Artista:</span> {artist.name}</p>
+                <p className="text-white"><span className="text-gray-400 w-20 inline-block font-medium">Álbum:</span> {artist.albumName}</p>
+                <p className="text-white"><span className="text-gray-400 w-20 inline-block font-medium">Año:</span> {artist.releaseYear}</p>
+              </div>
+            </div>
+          );
+        };
+        
+        const ArtistInfo = ({ artist, currentTrack, isPlaying, onPurchaseClick, isUnlocked, isAlbumDownloaded, downloadStatus, onDownloadClick }) => {
+          const [showShareOptions, setShowShareOptions] = React.useState(false);
+          const shareContainerRef = React.useRef(null);
+          const shareUrl = "https://sites.google.com/view/desmuda/nohemi";
+          const handleShareClick = () => {
+            setShowShareOptions(prev => !prev);
+          };
+          React.useEffect(() => {
+            const handleClickOutside = (event) => {
+              if (shareContainerRef.current && !shareContainerRef.current.contains(event.target)) {
+                setShowShareOptions(false);
+              }
+            };
+            document.addEventListener('mousedown', handleClickOutside);
+            return () => {
+              document.removeEventListener('mousedown', handleClickOutside);
+            };
+          }, []);
+
+          let albumArtUrl = artist.avatarUrl;
+
+          return (
+            <div className="flex flex-col items-center text-center lg:items-start lg:text-left">
+              <img
+                src={albumArtUrl}
+                alt={artist.name}
+                className="w-48 h-48 lg:w-full lg:h-auto object-cover aspect-square mb-4 shadow-lg rounded-md"
+              />
+              <AlbumInfo artist={artist} currentTrack={currentTrack} isPlaying={isPlaying} />
+
+              <div className="mt-4 w-full">
+                {!isUnlocked ? (
+                    <button 
+                        onClick={onPurchaseClick}
+                        className="block w-full bg-red-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-red-500 transition-colors duration-200 text-center"
+                    >
+                        Comprar Álbum
+                    </button>
+                ) : isAlbumDownloaded ? (
+                    <div className="flex items-center justify-center lg:justify-start gap-2 w-full bg-green-900/80 text-green-300 font-semibold py-3 px-4 rounded-lg text-center border border-green-500/30">
+                        <Icon name="downloaded" className="w-5 h-5 text-green-400" />
+                        <span>Álbum Descargado</span>
+                    </div>
+                ) : (
+                    <button
+                        onClick={onDownloadClick}
+                        disabled={downloadStatus === 'downloading'}
+                        className="w-full bg-blue-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-blue-500 transition-colors duration-200 text-center disabled:bg-blue-800 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                    >
+                        {downloadStatus === 'downloading' ? (
+                            <>
+                               <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                               <span>Descargando...</span>
+                            </>
+                        ) : (
+                           <>
+                            <Icon name="download" className="w-5 h-5"/>
+                            <span>Escuchar después</span>
+                           </>
+                        )}
+                    </button>
+                )}
+              </div>
+              
+              <div className="flex items-center justify-center lg:justify-start gap-4 mt-4 w-full max-w-xs lg:max-w-full">
+                <a href="https://sites.google.com/view/formatog/inicio" target="_blank" rel="noopener noreferrer" aria-label="Visit Formato G" className="bg-zinc-800 p-3 rounded-md hover:bg-zinc-700 transition-colors duration-200">
+                  <img src="https://ia801406.us.archive.org/6/items/logo-blanco-favicom-02/logo%20blanco%20favicom-02.png" alt="Formato G Logo" className="w-6 h-6 object-contain" />
+                </a>
+                <div className="relative" ref={shareContainerRef}>
+                  <button onClick={handleShareClick} aria-label="Share" className="bg-zinc-800 p-3 rounded-md hover:bg-zinc-700 transition-colors duration-200">
+                      <Icon name="share" className="w-6 h-6 text-white" />
+                  </button>
+                  {showShareOptions && (
+                    <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 p-2 bg-zinc-900/80 backdrop-blur-sm rounded-lg shadow-lg z-20 animate-fade-in-up">
+                      <div className="relative group">
+                        <a href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`} target="_blank" rel="noopener noreferrer" aria-label="Share on Facebook" className="bg-zinc-800 p-3 rounded-md hover:bg-zinc-700 transition-colors duration-200 block">
+                          <Icon name="facebook" className="w-6 h-6 text-white"/>
+                        </a>
+                        <span className="absolute left-full top-1/2 -translate-y-1/2 ml-3 whitespace-nowrap bg-black text-white text-xs font-bold py-1 px-2 rounded-md pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                          Compartir en Facebook
+                        </span>
+                      </div>
+                      <div className="relative group">
+                        <a href={`whatsapp://send?text=${encodeURIComponent(shareUrl)}`} rel="noopener noreferrer" aria-label="Share on Whatsapp" className="bg-zinc-800 p-3 rounded-md hover:bg-zinc-700 transition-colors duration-200 block">
+                          <Icon name="whatsapp" className="w-6 h-6 text-white"/>
+                        </a>
+                        <span className="absolute left-full top-1/2 -translate-y-1/2 ml-3 whitespace-nowrap bg-black text-white text-xs font-bold py-1 px-2 rounded-md pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                          Compartir por Whatsapp
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+                <a 
+                  href="https://www.instagram.com/sylvinabrizuela/?hl=es-la"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Visit Instagram"
+                  className="bg-zinc-800 p-3 rounded-md hover:bg-zinc-700 transition-colors duration-200"
+                >
+                  <Icon name="instagram" className="w-6 h-6 text-white" />
+                </a>
+                <a 
+                  href="https://www.youtube.com/@sylvinabrizuela/featured"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Visit YouTube"
+                  className="bg-zinc-800 p-3 rounded-md hover:bg-zinc-700 transition-colors duration-200"
+                >
+                  <Icon name="youtube" className="w-6 h-6 text-white" />
+                </a>
+              </div>
+
+              {artist.bio && (
+                <div className="hidden lg:block my-4 text-sm text-gray-400 leading-relaxed">
+                    <h3 className="text-base font-semibold text-white mb-2">Biografía</h3>
+                    <p>{artist.bio}</p>
+                </div>
+              )}
+              
+              <style>{`
+                @keyframes fade-in-up {
+                  from { opacity: 0; transform: translate(-50%, 10px); }
+                  to { opacity: 1; transform: translate(-50%, 0); }
+                }
+                .animate-fade-in-up { animation: fade-in-up 0.2s ease-out forwards; }
+              `}</style>
+            </div>
+          );
+        };
+
+        const TrackItem = ({ track, index, isCurrent, isPlaying, onTrackSelect, isAlbumUnlocked }) => {
+          const isAvailable = track.available || isAlbumUnlocked;
+          const baseClasses = "flex items-center gap-4 p-2 rounded-md transition-colors duration-200";
+          const stateClasses = isCurrent ? "bg-zinc-700" : (isAvailable ? "hover:bg-zinc-800 cursor-pointer" : "opacity-50");
+          const textClass = isCurrent ? "text-green-400" : "text-white";
+          return (
+            <li className={`${baseClasses} ${stateClasses}`} onClick={() => isAvailable && onTrackSelect(track)}>
+              <div className="w-6 text-right text-gray-400 flex items-center justify-center">
+                 {isCurrent && isPlaying ? (
+                    <Icon name="volume" className="w-4 h-4 text-green-400 animate-pulse" />
+                ) : (
+                    <span className={textClass}>{index + 1}</span>
+                )}
+              </div>
+              <img src={track.albumArt} alt={track.title} className="w-10 h-10 rounded-sm" />
+              <div className="flex-1">
+                <p className={textClass}>{track.title}</p>
+                {track.featuring && <p className="text-xs text-gray-400">(con {track.featuring})</p>}
+              </div>
+              {!isAvailable && (
+                <div className="flex items-center gap-2 text-sm text-gray-500">
+                  <Icon name="eye" className="w-4 h-4" />
+                  <span>Solo vista previa</span>
+                </div>
+              )}
+            </li>
+          );
+        };
+        const TrackList = ({ tracks, currentTrackId, isPlaying, onTrackSelect, isAlbumUnlocked }) => {
+          return (
+            <ul className="space-y-1">
+              {tracks.map((track, index) => (
+                <TrackItem
+                  key={track.id}
+                  track={track}
+                  index={index}
+                  isCurrent={track.id === currentTrackId}
+                  isPlaying={track.id === currentTrackId && isPlaying}
+                  onTrackSelect={onTrackSelect}
+                  isAlbumUnlocked={isAlbumUnlocked}
+                />
+              ))}
+            </ul>
+          );
+        };
+        
+        const formatTime = (timeInSeconds) => {
+            if (isNaN(timeInSeconds) || timeInSeconds === 0) return '0:00';
+            const seconds = Math.floor(timeInSeconds);
+            const minutes = Math.floor(seconds / 60);
+            const remainingSeconds = seconds % 60;
+            return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+        };
+        const PlayerControls = ({ currentTrack, isPlaying, onPlayPause, onNext, onPrev, onStop, progress, onSeek, volume, onVolumeChange }) => {
+          return (
+            <footer 
+                className="fixed bottom-0 left-0 right-0 bg-[#181818] border-t border-zinc-800 text-white flex items-center justify-between px-4 z-50"
+                style={{
+                    height: `calc(6rem + env(safe-area-inset-bottom))`,
+                    paddingBottom: `env(safe-area-inset-bottom)`
+                }}
+            >
+              <div className="hidden md:flex items-center gap-4 w-1/4">
+                {currentTrack && isPlaying ? (
+                  <>
+                    <img src={currentTrack.albumArt} alt={currentTrack.title} className="w-14 h-14 rounded-md" />
+                    <div>
+                      <p className="font-semibold">{currentTrack.title}</p>
+                      <p className="text-sm text-gray-400">{currentTrack.artist}</p>
+                    </div>
+                  </>
+                ) : (
+                  <div className="text-gray-400 italic text-sm">
+                    <p>La música</p>
+                    <p>vuelve a ser tuya</p>
+                  </div>
+                )}
+              </div>
+              <div className="flex flex-col items-center justify-center gap-2 flex-grow w-full md:w-auto">
+                <div className="flex items-center gap-4 md:gap-6">
+                  <button onClick={onPrev} className="text-gray-400 hover:text-white transition-colors" aria-label="Previous">
+                    <Icon name="previous" className="w-6 h-6" />
+                  </button>
+                  <button onClick={onPlayPause} className="bg-white text-black rounded-full p-3 flex items-center justify-center hover:scale-105 transition-transform" aria-label={isPlaying ? 'Pause' : 'Play'}>
+                    <Icon name={isPlaying ? 'pause' : 'play'} className="w-6 h-6" />
+                  </button>
+                  <button onClick={onNext} className="text-gray-400 hover:text-white transition-colors" aria-label="Next">
+                    <Icon name="next" className="w-6 h-6" />
+                  </button>
+                  <button onClick={onStop} className="text-gray-400 hover:text-white transition-colors" aria-label="Stop">
+                      <Icon name="stop" className="w-5 h-5" />
+                  </button>
+                  <button className="hidden md:block text-gray-400 hover:text-white transition-colors" aria-label="Repeat">
+                    <Icon name="repeat" className="w-5 h-5" />
+                  </button>
+                </div>
+                <div className="flex items-center gap-2 w-full max-w-lg">
+                  <span className="text-xs text-gray-400 w-10 text-center">{formatTime(progress.currentTime)}</span>
+                  <input type="range" value={progress.currentTime} max={progress.duration || 0} onChange={onSeek} className="w-full h-1 bg-zinc-600 rounded-lg appearance-none cursor-pointer range-sm accent-white hover:accent-green-500" aria-label="track progress" />
+                  <span className="text-xs text-gray-400 w-10 text-center">{formatTime(progress.duration)}</span>
+                </div>
+              </div>
+              <div className="hidden md:flex items-center justify-end gap-2 w-1/4">
+                <Icon name="volume" className="w-5 h-5 text-gray-400" />
+                <input type="range" min="0" max="1" step="0.01" value={volume} onChange={onVolumeChange} className="w-24 h-1 bg-zinc-600 rounded-lg appearance-none cursor-pointer range-sm accent-white hover:accent-green-500" aria-label="volume control" />
+              </div>
+            </footer>
+          );
+        };
+        
+        const App = () => {
+          const { useState, useCallback, useRef, useEffect } = React;
+          const [currentTrack, setCurrentTrack] = useState(null);
+          const [isPlaying, setIsPlaying] = useState(false);
+          const [progress, setProgress] = useState({ currentTime: 0, duration: 0 });
+          const [volume, setVolume] = useState(1);
+          const audioRef = useRef(null);
+          const [isPurchaseModalOpen, setIsPurchaseModalOpen] = useState(false);
+          const [isAlbumUnlocked, setIsAlbumUnlocked] = useState(() => localStorage.getItem('album_unlocked') === 'true');
+          const [isAlbumDownloaded, setIsAlbumDownloaded] = useState(() => localStorage.getItem('album_downloaded') === 'true');
+          const [downloadStatus, setDownloadStatus] = useState('idle');
+
+          useEffect(() => {
+            if ('serviceWorker' in navigator) {
+                const swContent = `
+                    const CACHE_NAME = 'sylvina-brizuela-audio-cache-v1';
+                    self.addEventListener('install', (event) => { event.waitUntil(self.skipWaiting()); });
+                    self.addEventListener('activate', (event) => { event.waitUntil(self.clients.claim()); });
+
+                    self.addEventListener('message', (event) => {
+                        if (event.data && event.data.type === 'CACHE_TRACKS') {
+                            const urlsToCache = event.data.urls;
+                            if (urlsToCache && urlsToCache.length > 0) {
+                                event.waitUntil(
+                                    caches.open(CACHE_NAME).then((cache) => {
+                                        console.log('SW: Caching tracks:', urlsToCache);
+                                        return cache.addAll(urlsToCache)
+                                            .then(() => {
+                                                event.source.postMessage({ type: 'CACHE_COMPLETE' });
+                                            })
+                                            .catch((error) => {
+                                                console.error('SW: Caching failed:', error);
+                                                event.source.postMessage({ type: 'CACHE_FAILED', error: error.message });
+                                            });
+                                    })
+                                );
+                            }
+                        }
+                    });
+
+                    self.addEventListener('fetch', (event) => {
+                        if (event.request.url.includes('.mp3')) {
+                            event.respondWith(
+                                caches.match(event.request).then((cachedResponse) => {
+                                    return cachedResponse || fetch(event.request);
+                                })
+                            );
+                        }
+                    });
+                `;
+                const blob = new Blob([swContent], { type: 'application/javascript' });
+                const swUrl = URL.createObjectURL(blob);
+
+                navigator.serviceWorker.register(swUrl)
+                    .then(reg => console.log('Service Worker registered.', reg))
+                    .catch(err => console.error('Service Worker registration failed:', err));
+
+                const handleServiceWorkerMessage = (event) => {
+                    if (event.data.type === 'CACHE_COMPLETE') {
+                        console.log('App: Cache complete.');
+                        alert('Álbum descargado y listo para escuchar sin conexión.');
+                        localStorage.setItem('album_downloaded', 'true');
+                        setIsAlbumDownloaded(true);
+                        setDownloadStatus('downloaded');
+                    } else if (event.data.type === 'CACHE_FAILED') {
+                         console.error('App: Cache failed.', event.data.error);
+                         alert('Hubo un error al descargar el álbum.');
+                         setDownloadStatus('idle');
+                    }
+                };
+                navigator.serviceWorker.addEventListener('message', handleServiceWorkerMessage);
+                return () => navigator.serviceWorker.removeEventListener('message', handleServiceWorkerMessage);
+            }
+          }, []);
+
+          const handleDownload = useCallback(() => {
+              if (navigator.serviceWorker.controller) {
+                  setDownloadStatus('downloading');
+                  const audioUrls = TRACK_DATA.map(t => t.audioSrc).filter(Boolean);
+                  navigator.serviceWorker.controller.postMessage({
+                      type: 'CACHE_TRACKS',
+                      urls: audioUrls,
+                  });
+              } else {
+                  alert('La función de descarga no está lista. Por favor, recarga la página.');
+                  setTimeout(() => handleDownload(), 2000); // Retry after SW activation
+              }
+          }, []);
+
+          const handleUnlock = useCallback(() => {
+              localStorage.setItem('album_unlocked', 'true');
+              setIsAlbumUnlocked(true);
+              setTimeout(handleDownload, 1000); // Trigger download after unlock
+          }, [handleDownload]);
+
+          const handleTrackSelect = useCallback((track) => {
+            const isAvailable = track.available || isAlbumUnlocked;
+            if (isAvailable) {
+              setCurrentTrack(track);
+              setIsPlaying(true);
+            }
+          }, [isAlbumUnlocked]);
+
+          const handlePlayPause = useCallback(() => {
+            if (currentTrack) {
+              setIsPlaying(prev => !prev);
+            } else if (TRACK_DATA.length > 0) {
+              const firstAvailableTrack = TRACK_DATA.find(t => t.available || isAlbumUnlocked);
+              if (firstAvailableTrack) {
+                handleTrackSelect(firstAvailableTrack);
+              }
+            }
+          }, [currentTrack, handleTrackSelect, isAlbumUnlocked]);
+
+          const playNextOrPrevTrack = useCallback((direction) => {
+            if (!currentTrack) return;
+            const currentIndex = TRACK_DATA.findIndex(t => t.id === currentTrack.id);
+            let nextIndex = direction === 'next' 
+                ? (currentIndex + 1)
+                : (currentIndex - 1 + TRACK_DATA.length);
+            
+            for (let i = 0; i < TRACK_DATA.length; i++) {
+                const trackIndex = (nextIndex + (direction === 'next' ? i : -i) + TRACK_DATA.length) % TRACK_DATA.length;
+                const track = TRACK_DATA[trackIndex];
+                if (track.available || isAlbumUnlocked) {
+                    if (track.id !== currentTrack.id) {
+                        setCurrentTrack(track);
+                        setIsPlaying(true);
+                        return;
+                    }
+                }
+            }
+            if (!isAlbumUnlocked) {
+                setIsPlaying(false);
+            }
+          }, [currentTrack, isAlbumUnlocked]);
+
+          const handleNext = useCallback(() => playNextOrPrevTrack('next'), [playNextOrPrevTrack]);
+          const handlePrev = useCallback(() => playNextOrPrevTrack('prev'), [playNextOrPrevTrack]);
+          
+          const handleStop = useCallback(() => {
+            setIsPlaying(false);
+            setCurrentTrack(null);
+            if (audioRef.current) {
+              audioRef.current.pause();
+              audioRef.current.currentTime = 0;
+            }
+          }, []);
+
+          useEffect(() => {
+            if (audioRef.current && currentTrack?.audioSrc) {
+              if (audioRef.current.src !== currentTrack.audioSrc) {
+                audioRef.current.src = currentTrack.audioSrc;
+              }
+              if (isPlaying) {
+                audioRef.current.play().catch(e => console.error("Error playing audio:", e));
+              } else {
+                audioRef.current.pause();
+              }
+            } else if (audioRef.current) {
+                audioRef.current.pause();
+            }
+          }, [currentTrack, isPlaying]);
+
+          useEffect(() => {
+            const audioElement = audioRef.current;
+            const handleTimeUpdate = () => {
+              if (audioElement) {
+                setProgress({
+                  currentTime: audioElement.currentTime,
+                  duration: audioElement.duration || 0,
+                });
+              }
+            };
+            const handleTrackEnd = () => {
+              handleNext();
+            };
+            if (audioElement) {
+              audioElement.addEventListener('timeupdate', handleTimeUpdate);
+              audioElement.addEventListener('loadedmetadata', handleTimeUpdate);
+              audioElement.addEventListener('ended', handleTrackEnd);
+              return () => {
+                audioElement.removeEventListener('timeupdate', handleTimeUpdate);
+                audioElement.removeEventListener('loadedmetadata', handleTimeUpdate);
+                audioElement.removeEventListener('ended', handleTrackEnd);
+              };
+            }
+          }, [handleNext]);
+
+          const handleSeek = (e) => {
+            if (audioRef.current) {
+                audioRef.current.currentTime = Number(e.target.value);
+            }
+          };
+
+          const handleVolumeChange = (e) => {
+            const newVolume = Number(e.target.value);
+            setVolume(newVolume);
+            if (audioRef.current) {
+              audioRef.current.volume = newVolume;
+            }
+          };
+          
+          return (
+            <div className="bg-[#121212] text-gray-300 font-sans h-dvh flex flex-col">
+              <style>{`
+                .thin-scrollbar::-webkit-scrollbar {
+                    width: 16px;
+                }
+                .thin-scrollbar::-webkit-scrollbar-track {
+                    background: transparent;
+                }
+                .thin-scrollbar::-webkit-scrollbar-thumb {
+                    background-color: #52525b; /* zinc-600 */
+                    border-radius: 8px;
+                    border: 6px solid transparent;
+                    background-clip: content-box;
+                }
+                .thin-scrollbar::-webkit-scrollbar-thumb:hover {
+                    background-color: #71717a; /* zinc-500 */
+                }
+                .thin-scrollbar {
+                    scrollbar-width: thin;
+                    scrollbar-color: #52525b transparent;
+                }
+              `}</style>
+              <main className="flex-1 flex flex-col lg:flex-row gap-8 p-4 lg:p-8 overflow-hidden">
+                <aside className="w-full lg:w-1/4 lg:max-w-xs flex-shrink-0 lg:overflow-y-auto lg:thin-scrollbar">
+                  <ArtistInfo
+                    artist={ARTIST_DATA}
+                    currentTrack={currentTrack}
+                    isPlaying={isPlaying}
+                    onPurchaseClick={() => setIsPurchaseModalOpen(true)}
+                    isUnlocked={isAlbumUnlocked}
+                    isAlbumDownloaded={isAlbumDownloaded}
+                    downloadStatus={downloadStatus}
+                    onDownloadClick={handleDownload}
+                  />
+                </aside>
+                <div className="flex-1 flex flex-col min-h-0 bg-zinc-900 rounded-lg">
+                  <DesktopHeader 
+                    artist={ARTIST_DATA} 
+                    currentTrack={currentTrack}
+                    isPlaying={isPlaying}
+                  />
+                  <div className="flex-1 overflow-y-auto p-4 thin-scrollbar">
+                     <TrackList
+                      tracks={TRACK_DATA}
+                      currentTrackId={currentTrack?.id}
+                      isPlaying={isPlaying}
+                      onTrackSelect={handleTrackSelect}
+                      isAlbumUnlocked={isAlbumUnlocked}
+                    />
+                  </div>
+                </div>
+              </main>
+              <div className="flex-shrink-0" style={{ height: `calc(6rem + env(safe-area-inset-bottom))` }}></div>
+              <audio ref={audioRef} preload="metadata" />
+              <PlayerControls
+                currentTrack={currentTrack}
+                isPlaying={isPlaying}
+                onPlayPause={handlePlayPause}
+                onNext={handleNext}
+                onPrev={handlePrev}
+                onStop={handleStop}
+                progress={progress}
+                onSeek={handleSeek}
+                volume={volume}
+                onVolumeChange={handleVolumeChange}
+              />
+              <PurchaseModal
+                isOpen={isPurchaseModalOpen}
+                onClose={() => setIsPurchaseModalOpen(false)}
+                artist={ARTIST_DATA}
+                onUnlock={handleUnlock}
+              />
+            </div>
+          );
+        };
+        
+        // --- RENDER ---
+        const rootElement = document.getElementById('root');
+        const root = ReactDOM.createRoot(rootElement);
+        root.render(<App />);
+
+    </script>
+</body>
+</html>
